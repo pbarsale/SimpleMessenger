@@ -2,6 +2,9 @@ package edu.buffalo.cse.cse486586.simplemessenger;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import  java.io.*;
+import java.io.InputStream;
+import java.io.DataInputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -19,6 +22,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnKeyListener;
 import android.widget.EditText;
+import android.widget.EditText;
 import android.widget.TextView;
 
 /**
@@ -30,7 +34,8 @@ import android.widget.TextView;
  * 
  * Please also take look at how this Activity is declared as the main Activity in
  * AndroidManifest.xml file in the root of the project directory (that is, using an intent filter).
- * 
+ *
+ *
  * @author stevko
  *
  */
@@ -45,7 +50,7 @@ public class SimpleMessengerActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        /*
+        /*,
          * Allow this Activity to use a layout file that defines what UI elements to use.
          * Please take a look at res/layout/main.xml to see how the UI elements are defined.
          * 
@@ -54,6 +59,9 @@ public class SimpleMessengerActivity extends Activity {
          * entire UI screen declared in res/layout/main.xml file. You can find other examples of R
          * class variables below.
          */
+
+        /* Notes : It starts the android layout by importing the R class. All information for R is
+         generated during compile time */
         setContentView(R.layout.main);
         
         /*
@@ -61,6 +69,13 @@ public class SimpleMessengerActivity extends Activity {
          * It is just a hack that I came up with to get around the networking limitations of AVDs.
          * The explanation is provided in the PA1 spec.
          */
+
+
+        /* Notes : Every emulator has a address. Its a software construct.
+            Any connection with a particular address is linked to this address.
+            The port is also programmatically construct. This allows virtual network and virtual device.
+            Don't close your socket. Check more on this online. */
+
         TelephonyManager tel = (TelephonyManager) this.getSystemService(Context.TELEPHONY_SERVICE);
         String portStr = tel.getLine1Number().substring(tel.getLine1Number().length() - 4);
         final String myPort = String.valueOf((Integer.parseInt(portStr) * 2));
@@ -128,6 +143,7 @@ public class SimpleMessengerActivity extends Activity {
                      * the difference, please take a look at
                      * http://developer.android.com/reference/android/os/AsyncTask.html
                      */
+                    /* Notes : See what is serial executor*/
                     new ClientTask().executeOnExecutor(AsyncTask.SERIAL_EXECUTOR, msg, myPort);
                     return true;
                 }
@@ -150,8 +166,43 @@ public class SimpleMessengerActivity extends Activity {
 
         @Override
         protected Void doInBackground(ServerSocket... sockets) {
+
+            //  Log.d(TAG, "doInBackground: Starting the code");
+            //  Log.d(TAG, "doInBackground: Socket accept done");
+            //  dataInputStream = new DataInputStream(socket.getInputStream());
+
+            Log.d(TAG, "doInBackground: Starting the code");
             ServerSocket serverSocket = sockets[0];
-            
+            Socket socket = null;
+            try
+            {
+                Log.d(TAG, "doInBackground: In try");
+                // Server will accept the connection from the client
+                socket = serverSocket.accept();
+                Log.d(TAG, "doInBackground: Accepted");
+
+                // This will read the message sent on the InputStream
+                BufferedReader in = new BufferedReader(
+                                new InputStreamReader(socket.getInputStream()));
+
+                // Read the message line by line
+                String line = in.readLine();
+                Log.d(TAG, "doInBackground: Read the line");
+                Log.d(TAG, "doInBackground: Line " + line);
+                if(line !=null)
+                {
+                    Log.d(TAG, "doInBackground: Line is not null");
+                    // If line is not null, send it to onProgressUpdate()
+                    publishProgress(line);
+                    Log.d(TAG, "doInBackground: Published and came back");
+                }
+                in.close();
+            }
+            catch(Exception e)
+            {
+                Log.e(TAG, "Unknown error. Please try again");
+            }
+
             /*
              * TODO: Fill in your server code that receives messages and passes them
              * to onProgressUpdate().
@@ -213,6 +264,18 @@ public class SimpleMessengerActivity extends Activity {
                         Integer.parseInt(remotePort));
                 
                 String msgToSend = msgs[0];
+
+                Log.d(TAG, "Client: " + msgToSend);
+
+                // PrintWriter will send the message to the IP binded to the socket
+                PrintWriter out =
+                        new PrintWriter(socket.getOutputStream(), true);
+
+
+                Log.d(TAG, "Client: PrintWriter Created");
+                out.print(msgToSend);
+                out.flush();
+                Log.d(TAG, "Client: Sent to server");
                 /*
                  * TODO: Fill in your client code that sends out a message.
                  */

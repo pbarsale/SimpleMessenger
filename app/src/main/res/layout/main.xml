@@ -32,10 +32,10 @@
 
     <EditText
         android:id="@+id/edit_text"
-        android:textColor="#000000"
-        android:background="#ADD8E6"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/hint_type" />
+        android:background="#ADD8E6"
+        android:hint="@string/hint_type"
+        android:textColor="#000000" />
 
 </LinearLayout>
